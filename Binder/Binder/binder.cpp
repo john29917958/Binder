@@ -144,34 +144,11 @@ bool Binder::isSetHostFile() {
 bool Binder::isSetDestinationFile() {
 	return !destinationFile.empty();
 }
-/*
-char* Binder::readFileInBinary(FILE* f) {
-	printf("======================Reading file======================\n");
-	unsigned long size = 0;
-	char *buffer = nullptr;
 
-	// Positioning to the end of file.
-	fseek(f, 0, SEEK_END);
-	size = ftell(f);
-
-	// Reset the position to the beginning of file.
-	rewind(f);
-	buffer = (char*)malloc(size);
-	fread(buffer, size, 1, f);
-
-	std::cout << "Size: " << size << std::endl;
-	std::cout << "Buffer: " << std::endl;
-	for (int i = 0; i < size; i++) {
-		std::cout << buffer[i];
-	}
-
-	printf("========================================================\n");
-	return buffer;
-}
-*/
 void Binder::clearFile(std::map<char*, FILE*> &m) {
 	if (!m.empty()) {
 		for (std::map<char*, FILE*>::iterator it = m.begin(); it != m.end(); ++it) {
+			delete it->first;
 			fclose(it->second);
 		}
 		m.clear();

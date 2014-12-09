@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <map>
-#include <Windows.h>
 
 class Binder {
 public:

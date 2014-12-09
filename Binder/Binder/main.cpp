@@ -1,22 +1,26 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include <iostream>
-#include <Windows.h>
 #include "dirent.h"
 #include "binder.h"
-#include <vector>
+#include "stub.h"
 #include <stdio.h>
-#include <string>
-#include <fstream>
-#include <cstdlib>
 using namespace std;
 
 char *dirConcat(char*, char*);
 
 int main(int argc, char *argv[]) {
 	// Execute the new generated host file.
-	if (argc == 1) {
-		printf("executed");
+	if (argc == 1) {		
+		Stub stub;
+		
+		if (stub.setFileName(argv[0])) {
+			printf("File \"%s\" opened.\n", argv[0]);
+		}
+		else {
+			printf("File format is not .exe file or file cannot be opened.\n");
+			return 0;
+		}
 	} // Execute binder to bind files.
 	else {
 		char *appName = nullptr;
@@ -31,7 +35,7 @@ int main(int argc, char *argv[]) {
 		appName = new char[strlen(argv[0]) + 5];
 		strcpy(appName, argv[0]);
 		strcat(appName, ".exe");
-
+		
 		srcFolder = argv[1];
 		dstFolder = argv[2];
 		hostFileName = argv[3];
