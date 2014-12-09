@@ -5,7 +5,7 @@
 // Public methods.
 
 Binder::Binder() {
-
+	
 }
 
 bool Binder::setHostFileName(char *fileName) {
@@ -63,11 +63,10 @@ bool Binder::setDestinationFileName(char* fileName) {
 	}
 }
 
-bool Binder::bind(char *argv0) {
-	char *hostFileData = nullptr;
-	char *fileListData = nullptr;
-	char *binderData = nullptr;
+bool Binder::bind(char *appName) {
 	char *currentFileName = nullptr;
+	FILE *hFile = nullptr;
+	FILE *binderFile = nullptr;
 	// List of all binded files, the count of all binded file
 	// is the file count in fileList and one host file and
 	// this program.
@@ -75,8 +74,8 @@ bool Binder::bind(char *argv0) {
 	FILE *currentFile = nullptr;
 
 	if (isSetHostFile() && isSetDestinationFile()) {
-		hostFileData = readFileInBinary(hostFile.begin()->second);
-		binderData = readFileInBinary(fopen(argv0, "rb"));
+		hFile = hostFile.begin()->second;
+		binderFile = fopen(appName, "rb");
 
 		/*
 		Copy compiled myBinder to the destination host file, setting
@@ -84,19 +83,19 @@ bool Binder::bind(char *argv0) {
 		an extract operation when user double clicks on the created
 		host file.
 		*/
-		writeFile(argv0, binderData, dstFile);
-
+		writeFile(appName, binderFile, dstFile);
+		
 		// Writing host file into new host file.
-		writeFile(hostFile.begin()->first, hostFileData, dstFile);
+		writeFile(hostFile.begin()->first, hFile, dstFile);
 
 		// Writing all files to be binded to the new host file.
 		for (std::map<char*, FILE*>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
 			currentFileName = it->first;
 			currentFile = it->second;
 
-			writeFile(currentFileName, readFileInBinary(currentFile), dstFile);
+			writeFile(currentFileName, currentFile, dstFile);
 		}
-
+		
 		return true;
 	}
 	else {
@@ -145,8 +144,9 @@ bool Binder::isSetHostFile() {
 bool Binder::isSetDestinationFile() {
 	return !destinationFile.empty();
 }
-
+/*
 char* Binder::readFileInBinary(FILE* f) {
+	printf("======================Reading file======================\n");
 	unsigned long size = 0;
 	char *buffer = nullptr;
 
@@ -159,29 +159,40 @@ char* Binder::readFileInBinary(FILE* f) {
 	buffer = (char*)malloc(size);
 	fread(buffer, size, 1, f);
 
+	std::cout << "Size: " << size << std::endl;
+	std::cout << "Buffer: " << std::endl;
+	for (int i = 0; i < size; i++) {
+		std::cout << buffer[i];
+	}
+
+	printf("========================================================\n");
 	return buffer;
 }
-
+*/
 void Binder::clearFile(std::map<char*, FILE*> &m) {
 	if (!m.empty()) {
 		for (std::map<char*, FILE*>::iterator it = m.begin(); it != m.end(); ++it) {
 			fclose(it->second);
-			delete it->first;
-			delete it->second;
-			/*
-			if (deleteFile) {
-				remove(it->first);
-			}
-			*/
 		}
 		m.clear();
 	}
 }
 
-void Binder::writeFile(char *fileName, char* buffer, FILE* targetFile) {
+void Binder::writeFile(char *fileName, FILE* srcFile, FILE* targetFile) {
+	unsigned long size = 0;
+	char *buffer = nullptr;
 	char *seperator = "*****";
 
-	fwrite(buffer, strlen(buffer), 1, targetFile);
+	// Positioning to the end of file.
+	fseek(srcFile, 0, SEEK_END);
+	size = ftell(srcFile);
+
+	// Reset the position to the beginning of file.
+	rewind(srcFile);
+	buffer = (char*)malloc(size);
+	fread(buffer, size, 1, srcFile);
+
+	fwrite(buffer, size, 1, targetFile);
 	fwrite(seperator, strlen(seperator), 1, targetFile);
 	fwrite(fileName, strlen(fileName), 1, targetFile);
 	fwrite(seperator, strlen(seperator), 1, targetFile);

@@ -25,9 +25,8 @@ private:
 	bool checkIfFileExist(char*);
 	bool isSetHostFile();
 	bool isSetDestinationFile();
-	char *readFileInBinary(FILE*);
 	void clearFile(std::map<char*, FILE*>&);
-	void writeFile(char*, char*, FILE*);
+	void writeFile(char*, FILE*, FILE*);
 };
 
 #endif

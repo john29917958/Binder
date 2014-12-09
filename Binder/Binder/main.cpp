@@ -14,21 +14,24 @@ using namespace std;
 char *dirConcat(char*, char*);
 
 int main(int argc, char *argv[]) {
-	char *appName = nullptr;
-	char *srcFolder = nullptr;
-	char *dstFolder = nullptr;
-	char *hostFileName = nullptr;
-	char *srcHostFileName = nullptr;
-	char *dstHostFileName = nullptr;
-	char *currentFileName = nullptr;
-	Binder binder;
-
 	// Execute the new generated host file.
 	if (argc == 1) {
 		printf("executed");
 	} // Execute binder to bind files.
 	else {
-		appName = argv[0];
+		char *appName = nullptr;
+		char *srcFolder = nullptr;
+		char *dstFolder = nullptr;
+		char *hostFileName = nullptr;
+		char *srcHostFileName = nullptr;
+		char *dstHostFileName = nullptr;
+		char *currentFileName = nullptr;
+		Binder binder;
+
+		appName = new char[strlen(argv[0]) + 5];
+		strcpy(appName, argv[0]);
+		strcat(appName, ".exe");
+
 		srcFolder = argv[1];
 		dstFolder = argv[2];
 		hostFileName = argv[3];
@@ -40,7 +43,6 @@ int main(int argc, char *argv[]) {
 		if (!binder.setHostFileName(srcHostFileName)) {
 			printf("Binder could not open source host file \"%s\".\n", srcHostFileName);
 			binder.~Binder();
-			system("pause");
 			return 0;
 		}
 		else {
@@ -51,7 +53,6 @@ int main(int argc, char *argv[]) {
 		if (!binder.setDestinationFileName(dstHostFileName)) {
 			printf("Binder could not create host file \"%s\".\n", dstHostFileName);
 			binder.~Binder();
-			system("pause");
 			return 0;
 		}
 		else {
@@ -73,7 +74,6 @@ int main(int argc, char *argv[]) {
 					if (!binder.addFile(currentFileName)) {
 						printf("Binder could not open \"%s\".\n", currentFileName);
 						binder.~Binder();
-						system("pause");
 						return 0;
 					}
 					else {
@@ -86,17 +86,21 @@ int main(int argc, char *argv[]) {
 		else {
 			// could not open directory
 			printf("Could not open directory \"%s\"\n", srcFolder);
+			binder.~Binder();
 
 			return 0;
 		}
-
-		if (binder.bind(argv[0])) {
+		
+		if (binder.bind(appName)) {
 			printf("Binding finished.");
-			return 0;
 		}
 		else {
 			printf("Binding failed.");
+			binder.~Binder();
+			return 0;
 		}
+
+		//binder.~Binder();
 	}
 
 	return 0;
