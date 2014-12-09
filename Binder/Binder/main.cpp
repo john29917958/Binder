@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
 	// Execute the new generated host file.
 	if (argc == 1) {
-		
+		printf("executed");
 	} // Execute binder to bind files.
 	else {
 		appName = argv[0];
@@ -88,6 +88,14 @@ int main(int argc, char *argv[]) {
 			printf("Could not open directory \"%s\"\n", srcFolder);
 
 			return 0;
+		}
+
+		if (binder.bind(argv[0])) {
+			printf("Binding finished.");
+			return 0;
+		}
+		else {
+			printf("Binding failed.");
 		}
 	}
 

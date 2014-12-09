@@ -67,10 +67,12 @@ bool Binder::bind(char *argv0) {
 	char *hostFileData = nullptr;
 	char *fileListData = nullptr;
 	char *binderData = nullptr;
+	char *currentFileName = nullptr;
 	// List of all binded files, the count of all binded file
 	// is the file count in fileList and one host file and
 	// this program.
 	FILE *dstFile = destinationFile.begin()->second;
+	FILE *currentFile = nullptr;
 
 	if (isSetHostFile() && isSetDestinationFile()) {
 		hostFileData = readFileInBinary(hostFile.begin()->second);
@@ -82,14 +84,17 @@ bool Binder::bind(char *argv0) {
 		an extract operation when user double clicks on the created
 		host file.
 		*/
-		writeFile(binderData, dstFile, true);
+		writeFile(argv0, binderData, dstFile);
 
 		// Writing host file into new host file.
-		writeFile(hostFileData, dstFile, false);
+		writeFile(hostFile.begin()->first, hostFileData, dstFile);
 
 		// Writing all files to be binded to the new host file.
 		for (std::map<char*, FILE*>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
-			writeFile(readFileInBinary(it->second), dstFile, false);
+			currentFileName = it->first;
+			currentFile = it->second;
+
+			writeFile(currentFileName, readFileInBinary(currentFile), dstFile);
 		}
 
 		return true;
@@ -162,6 +167,7 @@ void Binder::clearFile(std::map<char*, FILE*> &m) {
 		for (std::map<char*, FILE*>::iterator it = m.begin(); it != m.end(); ++it) {
 			fclose(it->second);
 			delete it->first;
+			delete it->second;
 			/*
 			if (deleteFile) {
 				remove(it->first);
@@ -172,12 +178,11 @@ void Binder::clearFile(std::map<char*, FILE*> &m) {
 	}
 }
 
-void Binder::writeFile(char* buffer, FILE* f, bool isEntryPoint) {
+void Binder::writeFile(char *fileName, char* buffer, FILE* targetFile) {
 	char *seperator = "*****";
 
-	if (!isEntryPoint) {
-		fwrite(seperator, strlen(seperator), 1, f);
-	}
-
-	fwrite(buffer, strlen(buffer), 1, f);
+	fwrite(buffer, strlen(buffer), 1, targetFile);
+	fwrite(seperator, strlen(seperator), 1, targetFile);
+	fwrite(fileName, strlen(fileName), 1, targetFile);
+	fwrite(seperator, strlen(seperator), 1, targetFile);
 }
