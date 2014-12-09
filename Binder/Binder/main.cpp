@@ -3,6 +3,7 @@
 #include <iostream>
 #include <Windows.h>
 #include "dirent.h"
+#include "binder.h"
 #include <vector>
 #include <stdio.h>
 #include <string>
@@ -10,85 +11,97 @@
 #include <cstdlib>
 using namespace std;
 
-char **getFileListInDir(char*);
+char *dirConcat(char*, char*);
 
 int main(int argc, char *argv[]) {
 	char *appName = nullptr;
 	char *srcFolder = nullptr;
 	char *dstFolder = nullptr;
 	char *hostFileName = nullptr;
+	char *srcHostFileName = nullptr;
+	char *dstHostFileName = nullptr;
+	char *currentFileName = nullptr;
+	Binder binder;
 
 	// Execute the new generated host file.
 	if (argc == 1) {
-		char **test = new char*[4];
-		test[0] = "First";
-		test[1] = "Second";
-		test[2] = "Third";
-		test[3] = "0";
-
-		int count = 0;
-
-		while (test[count] != "0")
-		{
-			printf("%s\n", test[count]);
-			count += 1;
-		}
-
-		cin.get();
+		
 	} // Execute binder to bind files.
 	else {
 		appName = argv[0];
 		srcFolder = argv[1];
 		dstFolder = argv[2];
-		hostFileName = argv[1];
+		hostFileName = argv[3];
 
-		char **fileNames = getFileListInDir(srcFolder);
-		int count = 0;
-		if (fileNames) {
-			while (fileNames[count] != nullptr) {
-				printf("%s\n", fileNames[count]);
-				count += 1;
-				cin.get();
-			}
+		srcHostFileName = dirConcat(srcFolder, hostFileName);
+		dstHostFileName = dirConcat(dstFolder, hostFileName);
+
+		// Setting host file name in source directory to Binder.
+		if (!binder.setHostFileName(srcHostFileName)) {
+			printf("Binder could not open source host file \"%s\".\n", srcHostFileName);
+			binder.~Binder();
+			system("pause");
+			return 0;
 		}
 		else {
-			printf("Directory cannot be opened.");
+			printf("Added host file \"%s\" to Binder.\n", srcHostFileName);
 		}
-		cin.get();
+
+		// Setting host file name in destination directory to Binder.
+		if (!binder.setDestinationFileName(dstHostFileName)) {
+			printf("Binder could not create host file \"%s\".\n", dstHostFileName);
+			binder.~Binder();
+			system("pause");
+			return 0;
+		}
+		else {
+			printf("Created host file \"%s\".\n", dstHostFileName);
+		}
+
+		DIR *dir;
+		struct dirent *ent;
+		if ((dir = opendir(srcFolder)) != NULL) {
+			printf("Reading directory \"%s\"......\n", srcFolder);
+
+			// print all the files and directories within directory
+			// Also add all files in source directory to Binder.
+			while ((ent = readdir(dir)) != NULL) {
+				currentFileName = dirConcat(srcFolder, ent->d_name);
+				// Filter out "." and ".."
+				if (strcmp(ent->d_name, ".") && strcmp(ent->d_name, "..") && strcmp(currentFileName, srcHostFileName)) {
+					printf("Detected: %s\n", ent->d_name);
+					if (!binder.addFile(currentFileName)) {
+						printf("Binder could not open \"%s\".\n", currentFileName);
+						binder.~Binder();
+						system("pause");
+						return 0;
+					}
+					else {
+						printf("Added \"%s\" to Binder.\n", currentFileName);
+					}
+				}
+			}
+			closedir(dir);
+		}
+		else {
+			// could not open directory
+			printf("Could not open directory \"%s\"\n", srcFolder);
+
+			return 0;
+		}
 	}
 
 	return 0;
 }
 
-char **getFileListInDir(char *dirName) {
-	DIR *dir;
-	struct dirent *ent;
-	int fileCount = 0;
-	vector<char*> fileNameListVector;
-	char **fileNameList = nullptr;
+char *dirConcat(char *srcFirst, char *srcSecond) {
+	int lenFirst = strlen(srcFirst);
+	int lenSecond = strlen(srcSecond);
 
-	if ((dir = opendir(dirName)) != NULL) {
-		/* print all the files and directories within directory */
-		while ((ent = readdir(dir)) != NULL) {
-			fileNameListVector.push_back(ent->d_name);
-			//printf("%s\n", ent->d_name);
-		}
-		closedir(dir);
+	char *dst = new char[lenFirst + lenSecond + 2];
+	strcpy(dst, srcFirst);
+	strcat(dst, "\\");
+	strcat(dst, srcSecond);
 
-		fileCount = fileNameListVector.size();
-		fileNameList = new char*[fileCount + 1];
-		for (int i = 0; i < fileCount; i++) {
-			printf("Peak: %s", fileNameListVector.back());
-			fileNameList[i] = fileNameListVector.back();
-			fileNameListVector.pop_back();
-		}
-		fileNameList[fileCount + 1] = nullptr;
-
-		fileNameListVector.clear();
-		return fileNameList;
-	}
-	else {
-		/* could not open directory */
-		return nullptr;
-	}
+	return dst;
 }

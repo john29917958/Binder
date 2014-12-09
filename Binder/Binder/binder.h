@@ -12,7 +12,7 @@ public:
 	bool setHostFileName(char*);
 	bool addFile(char*);
 	bool setDestinationFileName(char*);
-	char **bind(char*);
+	bool bind(char*);
 	~Binder();
 private:
 	// Private attributes.

