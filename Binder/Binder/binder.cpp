@@ -91,11 +91,11 @@ bool Binder::bind(char *appName) {
 		currentFileName = appName;
 
 		size = writeFile(currentFile, dstFile);
-		//setBindRecord(currentFileName, offset, size);
 		offset += size;
 
 		// Writing host file into new host file.
-		currentFileName = hostFile.begin()->first;
+		//currentFileName = hostFile.begin()->first;
+		currentFileName = "HostFile.exe";
 		currentFile = hostFile.begin()->second;
 
 		size = writeFile(currentFile, dstFile);

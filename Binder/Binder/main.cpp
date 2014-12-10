@@ -23,9 +23,8 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (stub.isSetFileName()) {
-			stub.extractAndExecute();
-
 			printf("Extracting files and execute it......\n");
+			stub.extractAndExecute();
 		}
 		else {
 			printf("Program will exit.\n");

