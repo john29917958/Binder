@@ -1,4 +1,4 @@
 Binder
 ======
 
-Natioinal Central University midterm project.
+National Central University midterm project.
