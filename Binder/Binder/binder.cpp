@@ -113,7 +113,12 @@ bool Binder::bind(char *appName) {
 			offset += size;
 		}
 
-		writeBindRecord(dstFile);
+		// Writing the binding record to the end of the created host file.
+		offset = writeBindRecord(dstFile);
+		std::string bindRecordPosition = std::to_string(offset);
+
+		// Writing the position of the binding record to the end of the created host file.
+		fwrite(bindRecordPosition.c_str(), bindRecordPosition.length(), 1, dstFile);
 		
 		return true;
 	}
