@@ -10,12 +10,13 @@ Stub::Stub() {
 bool Stub::setFileName(char *fName) {
 	if (checkExeFileNameFormat(fName) && (file = fopen(fName, "rb"))) {
 		fileName = new char[strlen(fName) + 1];
+		fileName[strlen(fName)] = '\0';
 		strcpy(fileName, fName);
 
 		return true;
 	}
 	else {
-		delete file;
+		fclose(file);
 		file = nullptr;
 
 		return false;
@@ -34,19 +35,34 @@ bool Stub::isSetFileName() {
 bool Stub::extractAndExecute() {
 	if (isSetFileName()) {
 		char *buffer = nullptr;
+		char *bytePointer = nullptr;
+		std::vector<char*> fileNameList;
+
 		unsigned long size = 0;
 
 		fseek(file, 0, SEEK_END);
 		size = ftell(file);
 		rewind(file);
 
+		buffer = new char[size + 1];
+		buffer[size] = '\0';
 		fread(buffer, size, 0, file);
+		bytePointer = buffer;
+
+		bytePointer = searchSeperator(buffer);
 
 		return true;
 	}
 	else {
 		return false;
 	}
+}
+
+Stub::~Stub() {
+	fclose(file);
+	delete[] fileName;
+	fileName = nullptr;
+	file = nullptr;
 }
 
 bool Stub::checkExeFileNameFormat(char *fileName) {
@@ -64,11 +80,29 @@ bool Stub::checkExeFileNameFormat(char *fileName) {
 	}
 }
 
-Stub::~Stub() {
-	delete fileName;
-	fclose(file);
+bool Stub::checkSeperator(char* ptr) {
+	int seperatorSize = 5;
+
+	for (int i = 0; i < seperatorSize; i++) {
+		if (ptr[i] != '*') {
+			return false;
+		}
+	}
+
+	return true;
 }
 
-bool Stub::searchSeperator() {
+char *Stub::searchSeperator(char *bufferPosition) {
+	if (bufferPosition != nullptr) {
+		for (unsigned long i = 0; bufferPosition[i] != '\0'; i++) {
+			if (checkSeperator(bufferPosition + i)) {
+				return bufferPosition + i + 7;
+			}
+		}
 
+		return nullptr;
+	}
+	else {
+		return nullptr;
+	}
 }

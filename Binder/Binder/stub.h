@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <vector>
 
 class Stub {
 public:
@@ -18,7 +19,8 @@ private:
 
 	// Private methods
 	bool checkExeFileNameFormat(char*);
-	bool searchSeperator();
+	bool checkSeperator(char*);
+	char *searchSeperator(char*);
 };
 
 #endif

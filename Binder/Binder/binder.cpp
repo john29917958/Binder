@@ -14,14 +14,18 @@ bool Binder::setHostFileName(char *fileName) {
 
 	if (checkExeFileNameFormat(fileName) && !checkIfFileExist(fileName) && (tempFile = fopen(fileName, "rb"))) {
 		name = new char[strlen(fileName) + 1];
+		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
 		hostFile[name] = tempFile;
 
 		return true;
 	}
 	else {
-		delete tempFile;
-		delete name;
+		fclose(tempFile);
+		delete[] name;
+		tempFile = nullptr;
+		name = nullptr;
+
 		return false;
 	}
 }
@@ -33,14 +37,18 @@ bool Binder::addFile(char* fileName) {
 	if (isSetHostFile() && isSetDestinationFile() && !checkIfFileExist(fileName) &&
 		(tempFile = fopen(fileName, "rb"))) {
 		name = new char[strlen(fileName) + 1];
+		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
 		fileList[name] = tempFile;
 
 		return true;
 	}
 	else {
-		delete tempFile;
-		delete name;
+		fclose(tempFile);
+		delete[] name;
+		tempFile = nullptr;
+		name = nullptr;
+
 		return false;
 	}
 }
@@ -51,50 +59,61 @@ bool Binder::setDestinationFileName(char* fileName) {
 
 	if (checkExeFileNameFormat(fileName) && !checkIfFileExist(fileName) && (tempFile = fopen(fileName, "wb+"))) {
 		name = new char[strlen(fileName) + 1];
+		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
 		destinationFile[name] = tempFile;
 
 		return true;
 	}
 	else {
-		delete tempFile;
-		delete name;
+		fclose(tempFile);
+		delete[] name;
+		tempFile = nullptr;
+		name = nullptr;
+
 		return false;
 	}
 }
 
 bool Binder::bind(char *appName) {
 	char *currentFileName = nullptr;
-	FILE *hFile = nullptr;
-	FILE *binderFile = nullptr;
-	// List of all binded files, the count of all binded file
-	// is the file count in fileList and one host file and
-	// this program.
-	FILE *dstFile = destinationFile.begin()->second;
 	FILE *currentFile = nullptr;
+	FILE *dstFile = destinationFile.begin()->second;
+	unsigned long size = 0;
+	unsigned long offset = 0;
 
-	if (isSetHostFile() && isSetDestinationFile()) {
-		hFile = hostFile.begin()->second;
-		binderFile = fopen(appName, "rb");
-
+	if (isSetHostFile() && isSetDestinationFile() && (currentFile = fopen(appName, "rb"))) {
 		/*
 		Copy compiled myBinder to the destination host file, setting
 		the entry point to myBinder's int main() function to perform
 		an extract operation when user double clicks on the created
 		host file.
 		*/
-		writeFile(appName, binderFile, dstFile);
-		
+		currentFileName = appName;
+
+		size = writeFile(currentFile, dstFile);
+		setBindRecord(currentFileName, offset, size);
+		offset += size;
+
 		// Writing host file into new host file.
-		writeFile(hostFile.begin()->first, hFile, dstFile);
+		currentFileName = hostFile.begin()->first;
+		currentFile = hostFile.begin()->second;
+
+		size = writeFile(currentFile, dstFile);
+		setBindRecord(currentFileName, offset, size);
+		offset += size;
 
 		// Writing all files to be binded to the new host file.
 		for (std::map<char*, FILE*>::iterator it = fileList.begin(); it != fileList.end(); ++it) {
 			currentFileName = it->first;
 			currentFile = it->second;
 
-			writeFile(currentFileName, currentFile, dstFile);
+			size = writeFile(currentFile, dstFile);
+			setBindRecord(currentFileName, offset, size);
+			offset += size;
 		}
+
+		writeBindRecord(dstFile);
 		
 		return true;
 	}
@@ -148,17 +167,17 @@ bool Binder::isSetDestinationFile() {
 void Binder::clearFile(std::map<char*, FILE*> &m) {
 	if (!m.empty()) {
 		for (std::map<char*, FILE*>::iterator it = m.begin(); it != m.end(); ++it) {
-			delete it->first;
+			delete[] it->first;
 			fclose(it->second);
+			it->second = nullptr;
 		}
 		m.clear();
 	}
 }
 
-void Binder::writeFile(char *fileName, FILE* srcFile, FILE* targetFile) {
+unsigned long Binder::writeFile(FILE* srcFile, FILE* targetFile) {
 	unsigned long size = 0;
 	char *buffer = nullptr;
-	char *seperator = "*****";
 
 	// Positioning to the end of file.
 	fseek(srcFile, 0, SEEK_END);
@@ -170,7 +189,53 @@ void Binder::writeFile(char *fileName, FILE* srcFile, FILE* targetFile) {
 	fread(buffer, size, 1, srcFile);
 
 	fwrite(buffer, size, 1, targetFile);
-	fwrite(seperator, strlen(seperator), 1, targetFile);
-	fwrite(fileName, strlen(fileName), 1, targetFile);
-	fwrite(seperator, strlen(seperator), 1, targetFile);
+
+	return size;
+}
+
+unsigned long Binder::writeBindRecord(FILE* targetFile) {
+	if (targetFile != nullptr) {
+		unsigned long currentPosition = ftell(targetFile);
+		int fileNameSpliter = 0;
+		std::string currentFileName;
+		std::string currentFilePosition;
+		std::string currentFileSize;
+
+		while (!nameRecord.empty()) {
+			currentFileName = nameRecord.back();
+			fileNameSpliter = currentFileName.find_last_of("\\", std::string::npos);
+			if (fileNameSpliter != std::string::npos) {
+				currentFileName = currentFileName.substr(fileNameSpliter + 1, std::string::npos);
+			}			
+
+			currentFilePosition = std::to_string(positionRecord.back());
+			currentFileSize = std::to_string(sizeRecord.back());
+
+			fwrite(currentFileName.c_str(), currentFileName.length(), 1, targetFile);
+			fwrite("*", 1, 1, targetFile);
+			fwrite(currentFilePosition.c_str(), currentFilePosition.length(), 1, targetFile);
+			fwrite("*", 1, 1, targetFile);
+			fwrite(currentFileSize.c_str(), currentFileSize.length(), 1, targetFile);
+			fwrite("*", 1, 1, targetFile);
+
+			nameRecord.pop_back();
+			positionRecord.pop_back();
+			sizeRecord.pop_back();
+		}
+
+		return currentPosition;
+	}
+	else {
+		return 0;
+	}
+}
+
+void Binder::setBindRecord(char* fileName, unsigned long position, unsigned long size) {
+	char *currentFileName = new char[strlen(fileName) + 1];
+	currentFileName[strlen(fileName)] = '\0';
+	strcpy(currentFileName, fileName);
+
+	nameRecord.push_back(currentFileName);
+	positionRecord.push_back(position);
+	sizeRecord.push_back(size);
 }

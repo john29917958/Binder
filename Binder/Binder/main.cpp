@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
 		Binder binder;
 
 		appName = new char[strlen(argv[0]) + 5];
+		appName[strlen(argv[0]) + 5] = '\0';
 		strcpy(appName, argv[0]);
 		strcat(appName, ".exe");
 		
@@ -46,7 +47,6 @@ int main(int argc, char *argv[]) {
 		// Setting host file name in source directory to Binder.
 		if (!binder.setHostFileName(srcHostFileName)) {
 			printf("Binder could not open source host file \"%s\".\n", srcHostFileName);
-			binder.~Binder();
 			return 0;
 		}
 		else {
@@ -56,7 +56,6 @@ int main(int argc, char *argv[]) {
 		// Setting host file name in destination directory to Binder.
 		if (!binder.setDestinationFileName(dstHostFileName)) {
 			printf("Binder could not create host file \"%s\".\n", dstHostFileName);
-			binder.~Binder();
 			return 0;
 		}
 		else {
@@ -77,7 +76,6 @@ int main(int argc, char *argv[]) {
 					printf("Detected: %s\n", ent->d_name);
 					if (!binder.addFile(currentFileName)) {
 						printf("Binder could not open \"%s\".\n", currentFileName);
-						binder.~Binder();
 						return 0;
 					}
 					else {
@@ -90,7 +88,6 @@ int main(int argc, char *argv[]) {
 		else {
 			// could not open directory
 			printf("Could not open directory \"%s\"\n", srcFolder);
-			binder.~Binder();
 
 			return 0;
 		}
@@ -100,13 +97,10 @@ int main(int argc, char *argv[]) {
 		}
 		else {
 			printf("Binding failed.");
-			binder.~Binder();
 			return 0;
 		}
-
-		//binder.~Binder();
 	}
-
+	
 	return 0;
 }
 
@@ -115,6 +109,7 @@ char *dirConcat(char *srcFirst, char *srcSecond) {
 	int lenSecond = strlen(srcSecond);
 
 	char *dst = new char[lenFirst + lenSecond + 2];
+	dst[lenFirst + lenSecond + 2] = '\0';
 	strcpy(dst, srcFirst);
 	strcat(dst, "\\");
 	strcat(dst, srcSecond);
