@@ -84,15 +84,14 @@ bool Binder::bind(char *appName) {
 
 	if (isSetHostFile() && isSetDestinationFile() && (currentFile = fopen(appName, "rb"))) {
 		/*
-		Copy compiled myBinder to the destination host file, setting
-		the entry point to myBinder's int main() function to perform
-		an extract operation when user double clicks on the created
-		host file.
+		Copy compiled executable Binder file to the destination host file,
+		setting	the entry point to myBinder's int main() function to perform
+		an extract operation when user double clicks on the created	host file.
 		*/
 		currentFileName = appName;
 
 		size = writeFile(currentFile, dstFile);
-		setBindRecord(currentFileName, offset, size);
+		//setBindRecord(currentFileName, offset, size);
 		offset += size;
 
 		// Writing host file into new host file.
@@ -217,16 +216,18 @@ unsigned long Binder::writeBindRecord(FILE* targetFile) {
 			currentFileSize = std::to_string(sizeRecord.back());
 
 			fwrite(currentFileName.c_str(), currentFileName.length(), 1, targetFile);
-			fwrite("*", 1, 1, targetFile);
+			fwrite("\0", 1, 1, targetFile);
 			fwrite(currentFilePosition.c_str(), currentFilePosition.length(), 1, targetFile);
-			fwrite("*", 1, 1, targetFile);
+			fwrite("\0", 1, 1, targetFile);
 			fwrite(currentFileSize.c_str(), currentFileSize.length(), 1, targetFile);
-			fwrite("*", 1, 1, targetFile);
+			fwrite("\0", 1, 1, targetFile);
 
 			nameRecord.pop_back();
 			positionRecord.pop_back();
 			sizeRecord.pop_back();
 		}
+
+		fwrite("!", 1, 1, targetFile);
 
 		return currentPosition;
 	}

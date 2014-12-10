@@ -21,6 +21,17 @@ int main(int argc, char *argv[]) {
 			printf("File format is not .exe file or file cannot be opened.\n");
 			return 0;
 		}
+
+		if (stub.isSetFileName()) {
+			stub.extractAndExecute();
+
+			printf("Extracting files and execute it......\n");
+		}
+		else {
+			printf("Program will exit.\n");
+
+			return 0;
+		}
 	} // Execute binder to bind files.
 	else {
 		char *appName = nullptr;
