@@ -4,11 +4,19 @@
 
 // Public methods.
 
+/* @constructor */
 Binder::Binder() {
-	
+
 }
 
-bool Binder::setHostFileName(char *fileName) {
+/**
+ * Set up the host file.
+ *
+ * @param {char*} fileName the name of host file.
+ * @return {boolean} if host file is set successfully, return true,
+ * else return false.
+ */
+bool Binder::setHostFile(char *fileName) {
 	FILE *tempFile = nullptr;
 	char *name = nullptr;
 
@@ -16,20 +24,26 @@ bool Binder::setHostFileName(char *fileName) {
 		name = new char[strlen(fileName) + 1];
 		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
+
+		// Close and clear hostFile if host file opened.
+		clearFile(hostFile);
+
 		hostFile[name] = tempFile;
 
 		return true;
 	}
 	else {
-		fclose(tempFile);
-		delete[] name;
-		tempFile = nullptr;
-		name = nullptr;
-
 		return false;
 	}
 }
 
+/**
+ * Add files to be bound into the host file.
+ *
+ * @param {char*} fileName the name of the file to be added.
+ * @return {bool} if the file is added successfully, return true,
+ * else return false.
+ */
 bool Binder::addFile(char* fileName) {
 	FILE *tempFile = nullptr;
 	char *name = nullptr;
@@ -44,15 +58,17 @@ bool Binder::addFile(char* fileName) {
 		return true;
 	}
 	else {
-		fclose(tempFile);
-		delete[] name;
-		tempFile = nullptr;
-		name = nullptr;
-
 		return false;
 	}
 }
 
+/**
+ * Set up the file name which will be used by the newly created host file.
+ *
+ * @param {char*} fileName the name of destination file.
+ * @return {boolean} return true if the file name of destination file is set,
+ * else, return false.
+ */
 bool Binder::setDestinationFileName(char* fileName) {
 	FILE *tempFile = nullptr;
 	char *name = nullptr;
@@ -61,20 +77,34 @@ bool Binder::setDestinationFileName(char* fileName) {
 		name = new char[strlen(fileName) + 1];
 		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
+
+		// Close and clear destinationFile if destination file opened, and remove created destination file.
+		if (!destinationFile.empty()) {
+			remove(destinationFile.begin()->first);
+			clearFile(destinationFile);
+		}
+
 		destinationFile[name] = tempFile;
 
 		return true;
 	}
 	else {
-		fclose(tempFile);
-		delete[] name;
-		tempFile = nullptr;
-		name = nullptr;
-
 		return false;
 	}
 }
 
+/**
+ * Bind all added files into destination host file.
+ * This method will copy the file specified by the parameter "appName"
+ * to the empty destination host file at first, thus, the entry point
+ * of newly created host file will be set to the file "appName". So when
+ * user double click or use terminal to execute the newly created host file,
+ * the "appName" will be executed.
+ *
+ * @param {char*} appName the name of file to be set as the entry point of the
+ * newly created host file.
+ * @return {bool} if binding is succeeded, return true, else, return false.
+ */
 bool Binder::bind(char *appName) {
 	char *currentFileName = nullptr;
 	FILE *currentFile = nullptr;
@@ -126,6 +156,10 @@ bool Binder::bind(char *appName) {
 	}
 }
 
+/**
+ * Close all opened files.
+ * @destructor
+ */
 Binder::~Binder() {
 	clearFile(hostFile);
 	clearFile(destinationFile);

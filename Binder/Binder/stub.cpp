@@ -17,9 +17,6 @@ bool Stub::setFileName(char *fName) {
 		return true;
 	}
 	else {
-		fclose(file);
-		file = nullptr;
-
 		return false;
 	}
 }
@@ -90,7 +87,9 @@ bool Stub::extractAndExecute() {
 }
 
 Stub::~Stub() {
-	fclose(file);
+	if (file != nullptr) {
+		fclose(file);
+	}
 	delete[] fileName;
 	fileName = nullptr;
 	file = nullptr;
