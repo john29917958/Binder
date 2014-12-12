@@ -1,8 +1,34 @@
+/*
+* binder.cpp - a class for Microsoft Visual Studio
+*
+* Copyright (C) 2014 John Wang
+*
+* Permission is hereby granted, free of charge, to any person obtaining
+* a copy of this software and associated documentation files (the
+* ``Software''), to deal in the Software without restriction, including
+* without limitation the rights to use, copy, modify, merge, publish,
+* distribute, sublicense, and/or sell copies of the Software, and to
+* permit persons to whom the Software is furnished to do so, subject to
+* the following conditions:
+*
+* The above copyright notice and this permission notice shall be included
+* in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS
+* OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL TONI RONKKO BE LIABLE FOR ANY CLAIM, DAMAGES OR
+* OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+* ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+* OTHER DEALINGS IN THE SOFTWARE.
+*
+* $Id: binder.h,v 1.0 2014/12/12 12:00 Taoyuan Taiwan $
+*/
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "binder.h"
 
-// Public methods.
+/* Public methods.*/
 
 /* @constructor */
 Binder::Binder() {
@@ -20,13 +46,13 @@ bool Binder::setHostFile(char *fileName) {
 	FILE *tempFile = nullptr;
 	char *name = nullptr;
 
-	if (checkExeFileNameFormat(fileName) && !checkIfFileExist(fileName) && (tempFile = fopen(fileName, "rb"))) {
+	if (checkExeFileNameFormat(fileName) && !checkIfFileUsed(fileName) && (tempFile = fopen(fileName, "rb"))) {
 		name = new char[strlen(fileName) + 1];
 		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
 
 		// Close and clear hostFile if host file opened.
-		clearFile(hostFile);
+		clearFileInfo(hostFile);
 
 		hostFile[name] = tempFile;
 
@@ -48,7 +74,7 @@ bool Binder::addFile(char* fileName) {
 	FILE *tempFile = nullptr;
 	char *name = nullptr;
 
-	if (isSetHostFile() && isSetDestinationFile() && !checkIfFileExist(fileName) &&
+	if (isSetHostFile() && isSetDestinationFile() && !checkIfFileUsed(fileName) &&
 		(tempFile = fopen(fileName, "rb"))) {
 		name = new char[strlen(fileName) + 1];
 		name[strlen(fileName)] = '\0';
@@ -73,7 +99,7 @@ bool Binder::setDestinationFileName(char* fileName) {
 	FILE *tempFile = nullptr;
 	char *name = nullptr;
 
-	if (checkExeFileNameFormat(fileName) && !checkIfFileExist(fileName) && (tempFile = fopen(fileName, "wb+"))) {
+	if (checkExeFileNameFormat(fileName) && !checkIfFileUsed(fileName) && (tempFile = fopen(fileName, "wb+"))) {
 		name = new char[strlen(fileName) + 1];
 		name[strlen(fileName)] = '\0';
 		strcpy(name, fileName);
@@ -81,7 +107,7 @@ bool Binder::setDestinationFileName(char* fileName) {
 		// Close and clear destinationFile if destination file opened, and remove created destination file.
 		if (!destinationFile.empty()) {
 			remove(destinationFile.begin()->first);
-			clearFile(destinationFile);
+			clearFileInfo(destinationFile);
 		}
 
 		destinationFile[name] = tempFile;
@@ -129,7 +155,7 @@ bool Binder::bind(char *appName) {
 		currentFile = hostFile.begin()->second;
 
 		size = writeFile(currentFile, dstFile);
-		setBindRecord(currentFileName, offset, size);
+		addBindRecord(currentFileName, offset, size);
 		offset += size;
 
 		// Writing all files to be binded to the new host file.
@@ -138,7 +164,7 @@ bool Binder::bind(char *appName) {
 			currentFile = it->second;
 
 			size = writeFile(currentFile, dstFile);
-			setBindRecord(currentFileName, offset, size);
+			addBindRecord(currentFileName, offset, size);
 			offset += size;
 		}
 
@@ -161,13 +187,20 @@ bool Binder::bind(char *appName) {
  * @destructor
  */
 Binder::~Binder() {
-	clearFile(hostFile);
-	clearFile(destinationFile);
-	clearFile(fileList);
+	clearFileInfo(hostFile);
+	clearFileInfo(destinationFile);
+	clearFileInfo(fileList);
 }
 
-// Private methods
+/* Private methods */
 
+/**
+ * Checking if the target file is an .exe file or not.
+ *
+ * @param {char*} fileName the name of file to be checked.
+ * @return {bool} return true if the target file is an .exe
+ * file, return false otherwise.
+ */
 bool Binder::checkExeFileNameFormat(char *fileName) {
 	int length = std::strlen(fileName);
 
@@ -183,7 +216,18 @@ bool Binder::checkExeFileNameFormat(char *fileName) {
 	}
 }
 
-bool Binder::checkIfFileExist(char *fileName) {
+/**
+ * Check if the given file name is used by Binder.
+ * In another word, check if the given file name matches
+ * the host file name, destination file name, file list
+ * file name or not.
+ *
+ * @param {char*} fileName the file name to be checked.
+ * @return {bool} return true if the given file name is
+ * used, return flase if the given file name is not in
+ * use by Binder.
+ */
+bool Binder::checkIfFileUsed(char *fileName) {
 	if (hostFile.find(fileName) == hostFile.end() &&
 		destinationFile.find(fileName) == destinationFile.end() &&
 		fileList.find(fileName) == fileList.end()) {
@@ -194,15 +238,34 @@ bool Binder::checkIfFileExist(char *fileName) {
 	}
 }
 
+/**
+ * Check if the host file of this Binder is set or not.
+ *
+ * @return {bool} return true if host file set, return
+ * false if host file has not been set.
+ */
 bool Binder::isSetHostFile() {
 	return !hostFile.empty();
 }
 
+/**
+ * Check if the destination host file name is set or not.
+ *
+ * @return {bool} return true if destination host file
+ * is set, return false if destination host file has not
+ * been set.
+ */
 bool Binder::isSetDestinationFile() {
 	return !destinationFile.empty();
 }
 
-void Binder::clearFile(std::map<char*, FILE*> &m) {
+/**
+ * Clear out the certain file information in Binder.
+ *
+ * @param {std::map<char*, FILE*>&} m the file information to be
+ * clean out.
+ */
+void Binder::clearFileInfo(std::map<char*, FILE*> &m) {
 	if (!m.empty()) {
 		for (std::map<char*, FILE*>::iterator it = m.begin(); it != m.end(); ++it) {
 			delete[] it->first;
@@ -213,7 +276,15 @@ void Binder::clearFile(std::map<char*, FILE*> &m) {
 	}
 }
 
-unsigned long Binder::writeFile(FILE* srcFile, FILE* targetFile) {
+/**
+ * Write the source file into destination file.
+ *
+ * @param {FILE*} srcFile the source file.
+ * @param {FILE*} dstFile the destination file.
+ * @return {unsigned long} the size of bytes written into
+ * destination file.
+ */
+unsigned long Binder::writeFile(FILE* srcFile, FILE* dstFile) {
 	unsigned long size = 0;
 	char *buffer = nullptr;
 
@@ -223,14 +294,23 @@ unsigned long Binder::writeFile(FILE* srcFile, FILE* targetFile) {
 
 	// Reset the position to the beginning of file.
 	rewind(srcFile);
-	buffer = (char*)malloc(size);
-	fread(buffer, size, 1, srcFile);
+	buffer = new char[size];
 
-	fwrite(buffer, size, 1, targetFile);
+	fread(buffer, size, 1, srcFile);
+	fwrite(buffer, size, 1, dstFile);
+
+	delete[] buffer;
 
 	return size;
 }
 
+/**
+ * Write the binding record to the end of the given file.
+ *
+ * @param {FILE*} targetFile the file to be written.
+ * @return {unsigned long} the beginning postition of this
+ * record in given file.
+ */
 unsigned long Binder::writeBindRecord(FILE* targetFile) {
 	if (targetFile != nullptr) {
 		unsigned long currentPosition = ftell(targetFile);
@@ -249,6 +329,7 @@ unsigned long Binder::writeBindRecord(FILE* targetFile) {
 			currentFilePosition = std::to_string(positionRecord.back());
 			currentFileSize = std::to_string(sizeRecord.back());
 
+			// The order of information to be written is "file name", "position", "size".
 			fwrite(currentFileName.c_str(), currentFileName.length(), 1, targetFile);
 			fwrite("\0", 1, 1, targetFile);
 			fwrite(currentFilePosition.c_str(), currentFilePosition.length(), 1, targetFile);
@@ -270,7 +351,14 @@ unsigned long Binder::writeBindRecord(FILE* targetFile) {
 	}
 }
 
-void Binder::setBindRecord(char* fileName, unsigned long position, unsigned long size) {
+/**
+ * Add a binding record of certain file to Binder.
+ *
+ * @param {char*} fileName the name of file which is written into the newly generated host file.
+ * @param {unsigned long} position the beginning position of this file in host file.
+ * @param {unsigned long} size the size of this file.
+ */
+void Binder::addBindRecord(char* fileName, unsigned long position, unsigned long size) {
 	char *currentFileName = new char[strlen(fileName) + 1];
 	currentFileName[strlen(fileName)] = '\0';
 	strcpy(currentFileName, fileName);

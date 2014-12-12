@@ -102,14 +102,81 @@ private:
 	std::vector<unsigned long> sizeRecord; /* the record of file size of each bounded files */
 
 	/* Private methods. */
+
+	/**
+	* Checking if the target file is an .exe file or not.
+	*
+	* @param {char*} fileName the name of file to be checked.
+	* @return {bool} return true if the target file is an .exe
+	* file, return false otherwise.
+	*/
 	bool checkExeFileNameFormat(char*);
-	bool checkIfFileExist(char*);
+
+	/**
+	* Check if the given file name is used by Binder.
+	* In another word, check if the given file name matches
+	* the host file name, destination file name, file list
+	* file name or not.
+	*
+	* @param {char*} fileName the file name to be checked.
+	* @return {bool} return true if the given file name is
+	* used, return flase if the given file name is not in
+	* use by Binder.
+	*/
+	bool checkIfFileUsed(char*);
+
+	/**
+	* Check if the host file of this Binder is set.
+	*
+	* @return {bool} return true if host file set,
+	* return false if host file has not been set.
+	*/
 	bool isSetHostFile();
+
+	/**
+	* Check if the destination host file name is set or not.
+	*
+	* @return {bool} return true if destination host file
+	* is set, return false if destination host file has not
+	* been set.
+	*/
 	bool isSetDestinationFile();
-	void clearFile(std::map<char*, FILE*>&);
+
+	/**
+	* Clear out the certain file information in Binder.
+	*
+	* @param {std::map<char*, FILE*>&} m the file information to be
+	* clean out.
+	*/
+	void clearFileInfo(std::map<char*, FILE*>&);
+
+	/**
+	* Write the source file into destination file.
+	*
+	* @param {FILE*} srcFile the source file.
+	* @param {FILE*} dstFile the destination file.
+	* @return {unsigned long} the size of bytes written into
+	* destination file.
+	*/
 	unsigned long writeFile(FILE*, FILE*);
+
+	/**
+	* Write the binding record to the end of the given file.
+	*
+	* @param {FILE*} targetFile the file to be written.
+	* @return {unsigned long} the beginning postition of this
+	* record in given file.
+	*/
 	unsigned long writeBindRecord(FILE*);
-	void setBindRecord(char*, unsigned long, unsigned long);
+
+	/**
+	* Add a binding record of certain file to Binder.
+	*
+	* @param {char*} fileName the name of file which is written into the newly generated host file.
+	* @param {unsigned long} position the beginning position of this file in host file.
+	* @param {unsigned long} size the size of this file.
+	*/
+	void addBindRecord(char*, unsigned long, unsigned long);
 };
 
 #endif

@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 		dstHostFileName = dirConcat(dstFolder, hostFileName);
 
 		// Setting host file name in source directory to Binder.
-		if (!binder.setHostFileName(srcHostFileName)) {
+		if (!binder.setHostFile(srcHostFileName)) {
 			printf("Binder could not open source host file \"%s\".\n", srcHostFileName);
 			return 0;
 		}
