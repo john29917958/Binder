@@ -22,7 +22,7 @@
 * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 * OTHER DEALINGS IN THE SOFTWARE.
 *
-* $Id: binder.h,v 1.0 2014/12/12 12:00 Taoyuan Taiwan $
+* $Id: binder.cpp,v 1.0 2014/12/12 12:00 Taoyuan Taiwan $
 */
 #define _CRT_SECURE_NO_WARNINGS
 
