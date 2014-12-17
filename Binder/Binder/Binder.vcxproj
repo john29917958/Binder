@@ -73,6 +73,9 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="stub.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="binder.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
